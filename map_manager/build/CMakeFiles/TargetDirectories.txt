@@ -1,0 +1,2 @@
+/home/deturres/source/src/map_manager/build/map_processing/CMakeFiles/map_processing.dir
+/home/deturres/source/src/map_manager/build/map_matching/CMakeFiles/test_homography.dir

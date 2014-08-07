@@ -1,0 +1,12 @@
+#ADD_LIBRARY(boss_map_reading SHARED
+#)
+#SET_TARGET_PROPERTIES(boss_map_reading PROPERTIES OUTPUT_NAME ${LIB_PREFIX})
+#TARGET_LINK_LIBRARIES(boss_map_reading 
+#  ${OpenCV_LIBS} 
+#  ${BOSS_LIBRARY}
+#)
+
+ADD_EXECUTABLE(distance_map distance_map.cpp)
+TARGET_LINK_LIBRARIES(distance_map
+  ${OpenCV_LIBS}
+)
