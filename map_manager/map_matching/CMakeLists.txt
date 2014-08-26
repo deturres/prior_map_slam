@@ -6,8 +6,8 @@
 #  ${OpenCV_LIBS}2
 #)
 
-ADD_EXECUTABLE(test_homography test_homographyRansac.cpp)
-TARGET_LINK_LIBRARIES(test_homography
+ADD_EXECUTABLE(test_homographyRansac test_homographyRansac.cpp)
+TARGET_LINK_LIBRARIES(test_homographyRansac
   #ransac_matching
   ${OpenCV_LIBS}
 )
