@@ -25,6 +25,7 @@ template <typename T> int sgn(T val) {
     return (T(0) < val) - (val < T(0));
 }
 
+
 bool read_file(std::ifstream& is, Keypoints& k)
 {
     std::string line;
@@ -54,13 +55,10 @@ void findHomography(Correspondances& good_matches, Mat H, Keypoints k_odomToMap)
         cout << k_odom[i] << " <--> " << k_map[i] << endl;
     }
     H = findHomography(k_odom, k_map, RANSAC);
+
     // debug
     cout << "Homography H = "<< endl << " "  << H << endl << endl;
-    cout << "H22 = " << endl << " "  << H.at<float>(0,0) << endl << endl;
-
     perspectiveTransform( k_odom, k_odomToMap, H);
-    cout << "H22 = " << endl << " "  << H.at<float>(0,0) << endl << endl;
-
 
     // (visual)debug
     ofstream os("odomtoMap.dat");
@@ -71,35 +69,36 @@ void findHomography(Correspondances& good_matches, Mat H, Keypoints k_odomToMap)
         os << odomToMap.transpose() << endl;
     }
 
-
     //extracting the Scalar value from the Homgraphy so that map = S * odom
     //normalization
-    int a = sgn(0.999/*H.at<float>(2,2)*/);
-    float b = sqrt(pow(H.at<float>(2,0),2) + pow(H.at<float>(2,1), 2) + pow(H.at<float>(2,2),2));
-    float eta = a;
+    int a = sgn(H.at<double>(2,2));
+    float b = sqrt(pow(H.at<double>(2,0),2) + pow(H.at<double>(2,1), 2) + pow(H.at<double>(2,2),2));
+    float eta = a/b;
     H = eta*H;
 
     //svd decomposition
     SVD svd(H);
     Mat U = svd.u;
     Mat V = svd.vt;
+    //extracting scale
     Mat D = Mat::diag(svd.w);
-
+    //extracting theta
+    Mat R = svd.u*svd.vt; //vt transpose???
+    double theta = atan2(R.at<double>(1,0),R.at<double>(0,0));
     cout << "eta = " << endl << " "  << eta << endl << endl;
     cout << "eta*H = " << endl << " "  << H << endl << endl;
-    cout << "Diagonal D = " << endl << " "  << D << endl << endl;
-    cout << "U = " << endl << " "  << U << endl << endl;
-    cout << "V = " << endl << " "  << V << endl << endl;
-
-
+    cout << "D = " << endl << " "  << D << endl << endl;
+    cout << "R = " << endl << " "  << R <<  " with theta: "<< theta << endl << endl;
 
 
 //    JacobiSVD<Matrix2d> svd(H, Eigen::ComputeThinU | Eigen::ComputeThinV);
-//    if (svd.singularValues()(0)<.5)
+//    if (svd.singularValues()(0)<.5) {
 //        cout << "problems with homography singular values" << endl;
-////        Matrix2d R = svd.matrixU()*svd.matrixV().transpose();
+//        Matrix2d R = svd.matrixU()*svd.matrixV().transpose();
+//        Matrix3d D = svd.singularValues();
+//    }
 
-    //creating S = [D, 0; 0^t, 1]
+
 
 }
 
