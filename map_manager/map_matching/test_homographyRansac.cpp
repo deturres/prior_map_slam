@@ -69,28 +69,75 @@ void findHomography(Correspondances& good_matches, Mat H, Keypoints k_odomToMap)
         os << odomToMap.transpose() << endl;
     }
 
-    //extracting the Scalar value from the Homgraphy so that map = S * odom
+    /// decomposeHomography() is not working !!!!!!!!!!!!!!!
+    //svd(H) to find Scale, Rotation angle and Translation
     //normalization
     int a = sgn(H.at<double>(2,2));
-    float b = sqrt(pow(H.at<double>(2,0),2) + pow(H.at<double>(2,1), 2) + pow(H.at<double>(2,2),2));
-    float eta = a/b;
+    double b = sqrt(pow(H.at<double>(2,0),2) + pow(H.at<double>(2,1), 2) + pow(H.at<double>(2,2),2));
+    double eta = a/b;
     H = eta*H;
+//    cout << "eta = " << endl << " "  << eta << endl << endl;
+//    cout << "eta*H = " << endl << " "  << H << endl << endl;
+
+    //extracting P pure projection matrix
+    Mat P = H.clone();
+    Mat I = Mat::eye(2,3,P.type());
+    I.copyTo(P.colRange(0,3).rowRange(0,2));
+//    cout << " P " << endl << " "  << P << endl << endl;
+
+    // H affine = H*P^-1
+    Mat Ha =  H*P.inv();
+    cout << " Ha " << endl << " "  << Ha << endl << endl;
 
     //svd decomposition
-    SVD svd(H);
-    Mat U = svd.u;
-    Mat Vt =svd.vt.t();
+    SVD svd(Ha);
     //extracting scale
-    Mat D = Mat::diag(svd.w);
+    Mat S = Mat::diag(svd.w);
     //extracting theta
-    Mat R = svd.u*svd.vt; //vt transpose???
+    Mat R = svd.u*svd.vt.t();
     double theta = atan2(R.at<double>(1,0),R.at<double>(0,0));
+    //extracting traslation
+    Vector3d t = Eigen::Vector3d(Ha.at<double>(2,0),Ha.at<double>(2,1),1);
 
-    cout << "eta = " << endl << " "  << eta << endl << endl;
-    cout << "eta*H = " << endl << " "  << H << endl << endl;
-    cout << "D = " << endl << " "  << D << endl << endl;
+    cout << "S = " << endl << " "  << S << endl << endl;
     cout << "R = " << endl << " "  << R <<  ", with theta: "<< theta << endl << endl;
+    cout << "t = " << endl << " "  << t << endl << endl;
 
+}
+
+void decomposeHomography(Mat& H, Mat S, Mat R, Vector3d t){
+
+    //normalization
+    int a = sgn(H.at<double>(2,2));
+    double b = sqrt(pow(H.at<double>(2,0),2) + pow(H.at<double>(2,1), 2) + pow(H.at<double>(2,2),2));
+    double eta = a/b;
+    H = eta*H;
+//    cout << "eta = " << endl << " "  << eta << endl << endl;
+//    cout << "eta*H = " << endl << " "  << H << endl << endl;
+
+    //extracting P pure projection matrix
+    Mat P = H.clone();
+    Mat I = Mat::eye(2,3,P.type());
+    I.copyTo(P.colRange(0,3).rowRange(0,2));
+//    cout << " P " << endl << " "  << P << endl << endl;
+
+    // H affine = H*P^-1
+    Mat Ha =  H*P.inv();
+    cout << " Ha " << endl << " "  << Ha << endl << endl;
+
+    //svd decomposition
+    SVD svd(Ha);
+    //extracting scale
+    S = Mat::diag(svd.w);
+    //extracting theta
+    R = svd.u*svd.vt.t();
+    double theta = atan2(R.at<double>(1,0),R.at<double>(0,0));
+    //extracting traslation
+    t = Eigen::Vector3d(Ha.at<double>(2,0),Ha.at<double>(2,1),1);
+
+//    cout << "S = " << endl << " "  << S << endl << endl;
+//    cout << "R = " << endl << " "  << R <<  ", with theta: "<< theta << endl << endl;
+//    cout << "t = " << endl << " "  << t << endl << endl;
 
 //    JacobiSVD<Matrix2d> svd(H, Eigen::ComputeThinU | Eigen::ComputeThinV);
 //    if (svd.singularValues()(0)<.5) {
@@ -98,9 +145,6 @@ void findHomography(Correspondances& good_matches, Mat H, Keypoints k_odomToMap)
 //        Matrix2d R = svd.matrixU()*svd.matrixV().transpose();
 //        Matrix3d D = svd.singularValues();
 //    }
-
-
-
 }
 
 
@@ -113,7 +157,7 @@ int main( int argc, char** argv )
         cout << " Usage: ./test_homographyRansac <features1> <features2>" << endl;
         return -1;
     }
-//    cout << argv[1] << ' ' << argv[2] << endl;
+    //    cout << argv[1] << ' ' << argv[2] << endl;
     ifstream feas_odom;
     ifstream feas_map;
     feas_odom.open(argv[1]);
@@ -132,7 +176,23 @@ int main( int argc, char** argv )
     good_matches = make_pair(keypoints_odom, keypoints_map);
     Mat H;
     Keypoints k_odomToMap;
+    //find
     findHomography(good_matches, H, k_odomToMap);
+
+    cout << "Homography H = "<< endl << " "  << H << endl << endl;
+
+    //decompose
+//    Mat S,R;
+//    Vector3d t;
+//    decomposeHomography(H, S, R, t);
+//    cout << "S = " << endl << " "  << S << endl << endl;
+//    cout << "R = " << endl << " "  << R <<  ", with theta: "<< theta << endl << endl;
+//    cout << "t = " << endl << " "  << t << endl << endl;
+//    double theta = atan2(R.at<double>(1,0),R.at<double>(0,0));
+
+
+    //creating constraints between features points
+
 
     return 0;
 }
