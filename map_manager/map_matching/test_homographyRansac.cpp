@@ -79,16 +79,17 @@ void findHomography(Correspondances& good_matches, Mat H, Keypoints k_odomToMap)
     //svd decomposition
     SVD svd(H);
     Mat U = svd.u;
-    Mat V = svd.vt;
+    Mat Vt =svd.vt.t();
     //extracting scale
     Mat D = Mat::diag(svd.w);
     //extracting theta
     Mat R = svd.u*svd.vt; //vt transpose???
     double theta = atan2(R.at<double>(1,0),R.at<double>(0,0));
+
     cout << "eta = " << endl << " "  << eta << endl << endl;
     cout << "eta*H = " << endl << " "  << H << endl << endl;
     cout << "D = " << endl << " "  << D << endl << endl;
-    cout << "R = " << endl << " "  << R <<  " with theta: "<< theta << endl << endl;
+    cout << "R = " << endl << " "  << R <<  ", with theta: "<< theta << endl << endl;
 
 
 //    JacobiSVD<Matrix2d> svd(H, Eigen::ComputeThinU | Eigen::ComputeThinV);
