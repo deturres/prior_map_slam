@@ -8,6 +8,7 @@
 #include <math.h>
 #include <Eigen/Geometry>
 #include "opencv2/core/core.hpp"
+#include "opencv2/core/eigen.hpp"
 #include "opencv2/features2d/features2d.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
@@ -18,6 +19,7 @@ using namespace std;
 using namespace Eigen;
 using namespace cv;
 
+typedef std::vector<Eigen::Vector2d > NewPoses;
 typedef std::vector<cv::Point2f > Keypoints;
 typedef std::pair< Keypoints,Keypoints > Correspondances;
 
@@ -71,7 +73,7 @@ void findHomographyM(Correspondances& good_matches, Mat& H, Keypoints& k_mapToOd
 }
 
 //svd(H) to find Scale, Rotation angle and Translation
-void decomposeHomography(Mat& H, Mat& S, Mat& R, Vector3d& t){
+void decomposeHomography(Mat& H, Matrix2d& S, Matrix2d& R, Vector2d& t){
 
     //normalization
     int a = sgn(H.at<double>(2,2));
@@ -92,42 +94,68 @@ void decomposeHomography(Mat& H, Mat& S, Mat& R, Vector3d& t){
     cout << " Ha " << endl << " "  << Ha << endl << endl;
 
     //extracting traslation
-    t = Eigen::Vector3d(Ha.at<double>(0,2),Ha.at<double>(1,2),1);
-    //svd decomposition to extract R
-    SVD svd(Ha);
-    //extracting scale
-    S = Mat::diag(svd.w);
-    //extracting theta
-    R = svd.u*svd.vt.t();
-    double theta = atan2(R.at<double>(1,0),R.at<double>(0,0));
+    t = Eigen::Vector2d(Ha.at<double>(0,2),Ha.at<double>(1,2));
 
-//    cout << "S = " << endl << " "  << S << endl << endl;
-//    cout << "R = " << endl << " "  << R <<  ", with theta: "<< theta << endl << endl;
-//    cout << "t = " << endl << " "  << t << endl << endl;
+    // Mat::svd decomposition to extract R :: change everything in 3d
+//    SVD svd(Ha, 1);
+//    //extracting scale
+//    Mat D = Mat::diag(svd.w);
+//    cv2eigen(D,S);
+//    //extracting theta
+//    Mat UVt = svd.u*svd.vt.t();
+//    cv2eigen(UVt,R);
 
-//    JacobiSVD<Matrix2d> svd(H, Eigen::ComputeThinU | Eigen::ComputeThinV);
-//    if (svd.singularValues()(0)<.5) {
-//        cout << "problems with homography singular values" << endl;
-//        Matrix2d R = svd.matrixU()*svd.matrixV().transpose();
-//        Matrix3d D = svd.singularValues();
-//    }
+    Matrix3d Haffine = Matrix3d::Zero();
+    cv2eigen(Ha, Haffine);
+    JacobiSVD<Matrix2d> svd(Haffine.block<2,2>(0,0), Eigen::ComputeThinU | Eigen::ComputeThinV);
+    if (svd.singularValues()(0)<.5) {
+        cout << "problems with homography singular values" << endl;
+        return;
+    }
+    R = svd.matrixU()*svd.matrixV().transpose();
+    S <<
+         svd.singularValues()(0), 0,
+         0, svd.singularValues()(1);
+
+    cout << " Haffine " << endl << " "  << Haffine << endl << endl;
+    cout << " S " << endl << " "  << S << endl << endl;
+    cout << " R " << endl << " "  << R << endl << endl;
 }
 
-void constraintDefinition(Correspondances& good_matches, Mat& S, Mat& R, Vector3d& t) {
+NewPoses newPoses(Correspondances& good_matches, Matrix2d& S, Matrix2d& R, Vector2d& t) {
     //creating constraints between features points
     // f(0) = (0,0);
-    // f(x) = S(R * [u,v]_x - [u,v]_0):: per ogni X
+    // f(x_new) = S(R * [u,v]_x - [u,v]_0) per ogni matches
 
-    Keypoints k_map, k_odom, k_map_to_odom;
+    Keypoints k_map, k_odom;
     //get the keypoints from the good matches
     k_map = good_matches.first;
     k_odom = good_matches.second;
 
+    NewPoses newPoses;
+    //fixing the first point
+    Vector2d p_odom_new  = Vector2d::Zero();
+    Vector2d p_map = Vector2d::Zero();
     for(size_t i = 0; i < good_matches.first.size(); i++) {
-        cout << k_map[i] << " <--> " << k_odom[i] << endl;
-        Vector3d p_map= Eigen::Vector3d(k_map[i].x, k_map[i].y, 1);
-        Vector3d k_map_to_odom
+
+        if (i==0)
+            p_odom_new = Eigen::Vector2d(k_odom[i].x, k_odom[i].y); // u,v;
+        else
+        {
+            p_map = Eigen::Vector2d(k_map[i].x, k_map[i].y);
+            p_odom_new = S*R*p_map + S*t; // u,v scaled, rotated and traslated according to H
+
+        }
+        newPoses.push_back(p_odom_new);
     }
+    //debug
+    cout << "newPoses.size: " << newPoses.size() << endl;
+
+    //debug
+    for (size_t i = 0; i < newPoses.size(); i++)
+        cout << k_odom[i] << " <--> " << newPoses[i].transpose() << endl;
+
+    return newPoses;
 }
 
 
@@ -164,14 +192,16 @@ int main( int argc, char** argv )
     cout << "Homography H = "<< endl << " "  << H << endl << endl;
 
     //decompose homography
-    Mat S,R;
-    Vector3d t;
+    Matrix2d S,R;
+    Vector2d t;
     decomposeHomography(H, S, R, t);
+    double thetaR = atan2(R(1,0),R(0,0));
+
     cout << "S = " << endl << " "  << S << endl << endl;
-    cout << "R = " << endl << " "  << R << endl << endl;
+    cout << "R = " << endl << " "  << R << " with thetaR " << thetaR << endl << endl;
     cout << "t = " << endl << " "  << t << endl << endl;
 
-    constraintDefinition(good_matches, S, R, t);
+    newPoses(good_matches, S, R, t);
 
     return 0;
 }
