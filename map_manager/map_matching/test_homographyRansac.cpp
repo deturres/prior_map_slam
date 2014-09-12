@@ -29,7 +29,7 @@ template <typename T> int sgn(T val) {
 }
 
 
-bool read_file(std::ifstream& is, Keypoints& k, Vector<Vector4f>& r, bool flag_map=true)
+bool read_file(std::ifstream& is, Keypoints& k, Vector<Vector4f>& r, int seq, bool flag_map=true)
 {
     std::string line;
     Point2f point;
@@ -42,6 +42,7 @@ bool read_file(std::ifstream& is, Keypoints& k, Vector<Vector4f>& r, bool flag_m
             k.push_back(point);
         }
         else {
+            ss >> seq;
             ss >> point.x >> point.y >> rest[0] >> rest[1] >> rest[2] >> rest[3];
             k.push_back(point);
             r.push_back(rest);
@@ -204,10 +205,13 @@ int main( int argc, char** argv )
     Keypoints keypoints_map;
     Keypoints keypoints_odom;
     Vector<Vector4f> keypoints_rest;
+    int seq = -1;
+
+    //fetch the seq!
     Correspondances good_matches;
     //reading from the file txt and creating the correspondances vector
-    read_file(feas_map,keypoints_map, keypoints_rest, true);
-    read_file(feas_odom,keypoints_odom, keypoints_rest, false);
+    read_file(feas_map, keypoints_map, keypoints_rest, true);
+    read_file(feas_odom, keypoints_odom, keypoints_rest, false);
 
     //for now manual good matches---> automatic find good correspondances needed..
     good_matches = make_pair(keypoints_map, keypoints_odom);
