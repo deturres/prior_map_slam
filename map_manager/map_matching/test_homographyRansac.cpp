@@ -20,33 +20,51 @@ using namespace Eigen;
 using namespace cv;
 
 //typedef Eigen::Matrix<double, 6, 1> Vector6d;
-typedef std::vector<Eigen::Vector2d > NewPoses;
-typedef std::vector<cv::Point2f > Keypoints;
+typedef std::pair< int,Vector2d > NewPoseSeq;
+typedef std::vector<NewPoseSeq, Eigen::aligned_allocator<Vector2d> > NewPoses;
+//typedef std::vector<Eigen::Vector2d > NewPoses;
+//typedef std::vector<cv::Point2f > Keypoints;
+
+typedef std::pair< int,cv::Point2f > KeypointsSeq;
+typedef std::vector<KeypointsSeq > Keypoints;
 typedef std::pair< Keypoints,Keypoints > Correspondances;
 
 template <typename T> int sgn(T val) {
     return (T(0) < val) - (val < T(0));
 }
 
-
-bool read_file(std::ifstream& is, Keypoints& k, Vector<Vector4f>& r, int seq, bool flag_map=true)
+bool read_file_m(std::ifstream& is, Keypoints& k)
 {
+    //todo aggiungi pair con seq = -1 (check the struct)
     std::string line;
     Point2f point;
-    Vector4f rest;
     while(std::getline(is, line))
     {
         std::stringstream ss(line);
-        if(flag_map) {
-            ss >> point.x >> point.y;
-            k.push_back(point);
-        }
-        else {
-            ss >> seq;
-            ss >> point.x >> point.y >> rest[0] >> rest[1] >> rest[2] >> rest[3];
-            k.push_back(point);
-            r.push_back(rest);
-        }
+        ss >> point.x >> point.y;
+        k.push_back(point);
+    }
+//    cout << k.size() << endl;
+    is.close();
+    return true;
+}
+
+bool read_file_o(std::ifstream& is, Keypoints& k, Vector<Vector4f>& r)
+{
+    //todo aggiungi pair con seq (check the struct)
+
+    std::string line;
+    Point2f point;
+    Vector4f rest;
+    int seq;
+    while(std::getline(is, line))
+    {
+        std::stringstream ss(line);       
+        ss >> seq;
+        ss >> point.x >> point.y >> rest[0] >> rest[1] >> rest[2] >> rest[3];
+        k.push_back(point);
+        r.push_back(rest);
+
     }
 //    cout << k.size() << endl;
     is.close();
