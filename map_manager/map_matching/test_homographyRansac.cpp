@@ -23,8 +23,8 @@ using namespace cv;
 typedef std::pair< int,Vector2d > NewPoseSeq;
 typedef std::vector<NewPoseSeq, Eigen::aligned_allocator<Vector2d> > NewPoses;
 //typedef std::vector<Eigen::Vector2d > NewPoses;
-//typedef std::vector<cv::Point2f > Keypoints;
 
+//typedef std::vector<cv::Point2f > Keypoints;
 typedef std::pair< int,cv::Point2f > KeypointsSeq;
 typedef std::vector<KeypointsSeq > Keypoints;
 typedef std::pair< Keypoints,Keypoints > Correspondances;
@@ -42,7 +42,8 @@ bool read_file_m(std::ifstream& is, Keypoints& k)
     {
         std::stringstream ss(line);
         ss >> point.x >> point.y;
-        k.push_back(point);
+        //reading a map (planimetry, no sequential number available)
+        k.push_back(make_pair(-1,point));
     }
 //    cout << k.size() << endl;
     is.close();
@@ -62,7 +63,7 @@ bool read_file_o(std::ifstream& is, Keypoints& k, Vector<Vector4f>& r)
         std::stringstream ss(line);       
         ss >> seq;
         ss >> point.x >> point.y >> rest[0] >> rest[1] >> rest[2] >> rest[3];
-        k.push_back(point);
+        k.push_back(make_pair(seq,point));
         r.push_back(rest);
 
     }
@@ -78,12 +79,18 @@ void findHomographyM(Correspondances& good_matches, Mat& H) {
     //get the keypoints from teh good matches
     k_map = good_matches.first;
     k_odom = good_matches.second;
-
+    std::vector<cv::Point2f> k_mapV, k_odomV;
+        for(size_t i = 0; i < k_map.size(); i++) {
+            //they have the same size
+            k_mapV.push_back(k_map[i].second);
+            k_odomV.push_back(k_odom[i].second);
+        }
     //debug
     for(size_t i = 0; i < good_matches.first.size(); i++) {
-        cout << k_map[i] << " <--> " << k_odom[i] << endl;
+//        KeypointsSeq a = k_map[i];
+        cout << k_map[i].first << k_mapV[i] << " <--> " << k_odomV[i] << endl;
     }
-    H = findHomography(k_map, k_odom, RANSAC);
+    H = findHomography(k_mapV, k_odomV, RANSAC);
     // debug
     cout << "Homography H = "<< endl << " "  << H << endl << endl;
 
@@ -158,7 +165,12 @@ NewPoses newPoses(Correspondances& good_matches, Mat& H,  Keypoints& k_mapToOdom
     //get the keypoints from the good matches
     k_map = good_matches.first;
     k_odom = good_matches.second;
-
+    std::vector<cv::Point2f> k_mapV, k_odomV, k_mapToOdomV;
+    for(size_t i = 0; i < k_map.size(); i++) {
+        //they have the same size
+        k_mapV.push_back(k_map[i].second);
+        k_odomV.push_back(k_odom[i].second);
+    }
     NewPoses newPoses;
 
     /// extracting R S and T to create the new poses: NOT WORKING!!
@@ -170,10 +182,10 @@ NewPoses newPoses(Correspondances& good_matches, Mat& H,  Keypoints& k_mapToOdom
     for(size_t i = 0; i < good_matches.first.size(); i++) {
 
         if (i==0)
-            p_odom_new = Eigen::Vector2d(k_odom[i].x, k_odom[i].y); // u,v;
+            p_odom_new = Eigen::Vector2d(k_odomV[i].x, k_odomV[i].y); // u,v;
         else
         {
-            p_map = Eigen::Vector2d(k_map[i].x, k_map[i].y);
+            p_map = Eigen::Vector2d(k_mapV[i].x, k_mapV[i].y);
             p_odom_new = S*R*p_map + S*t; // u,v scaled, rotated and traslated according to H
 
         }
@@ -181,20 +193,21 @@ NewPoses newPoses(Correspondances& good_matches, Mat& H,  Keypoints& k_mapToOdom
     }
 
     /// BETTER CONSIDER THE COMPLETE HOMOGRAPY (P <PROJECTION> INCLUDED)
-    perspectiveTransform(k_map, k_mapToOdom, H);
+    perspectiveTransform(k_mapV, k_mapToOdomV, H);
 //    ofstream os("mapToOdom.dat");
     cout << "Keypoints map perspective transformed on the odom\n" << endl;
-    for (size_t i = 0; i < k_mapToOdom.size(); i++)
+    for (size_t i = 0; i < k_mapToOdomV.size(); i++)
     {
+        int seq = k_odom[i].first;
+        k_mapToOdom.push_back(make_pair(seq,k_mapToOdomV[i]));
 //        cout << "Keypoints map perspective transformed on the odom\n" << k_mapToOdom[i] << endl;
-        Vector2d mapToOdom(Eigen::Vector2d(k_mapToOdom[i].x, k_mapToOdom[i].y));
-
-        newPoses.push_back(mapToOdom);
-        osNP << mapToOdom.transpose() << " " << rest[i].transpose() << endl;
+        Vector2d mapToOdom(Eigen::Vector2d(k_mapToOdomV[i].x, k_mapToOdomV[i].y));
+        newPoses.push_back(make_pair(seq,mapToOdom));
+        osNP << seq << " " << mapToOdom.transpose() << " " << rest[i].transpose() << endl;
     }
     //debug
     for (size_t i = 0; i < newPoses.size(); i++)
-        cout << k_odom[i] << " <--> " << newPoses[i].transpose() << endl;
+        cout << k_odomV[i] << " <--> " << newPoses[i].second.transpose() << endl;
 
     return newPoses;
 }
@@ -215,21 +228,17 @@ int main( int argc, char** argv )
 
     feas_map.open(argv[1]);
     feas_odom.open(argv[2]);
-//    string newposesfilename = argv[3];
-//    cout << newposesfilename << endl;
     newPoses_odom.open(argv[3]);
 
     // creating the good matches
     Keypoints keypoints_map;
     Keypoints keypoints_odom;
     Vector<Vector4f> keypoints_rest;
-    int seq = -1;
 
-    //fetch the seq!
     Correspondances good_matches;
     //reading from the file txt and creating the correspondances vector
-    read_file(feas_map, keypoints_map, keypoints_rest, true);
-    read_file(feas_odom, keypoints_odom, keypoints_rest, false);
+    read_file_m(feas_map, keypoints_map);
+    read_file_o(feas_odom, keypoints_odom, keypoints_rest);
 
     //for now manual good matches---> automatic find good correspondances needed..
     good_matches = make_pair(keypoints_map, keypoints_odom);
