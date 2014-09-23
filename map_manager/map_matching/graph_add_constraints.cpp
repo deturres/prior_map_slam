@@ -26,14 +26,14 @@
 #include "g2o/types/slam2d/types_slam2d.h"
 //#include "g2o_frontend/sensor_data/laser_robot_data.h"
 //#include "g2o_frontend/sensor_data/rgbd_data.h"
-//#include "g2o_frontend/basemath/bm_se2.h"
+#include "bm_se2.h"
 
 
 using namespace std;
 using namespace g2o;
 
-typedef std::pair<g2o::VertexSE3*, g2o::VertexSE2*> Vertex3to2;
-typedef std::vector<Vertex3to2> v3Mapv2;
+//typedef std::pair<g2o::VertexSE3*, g2o::VertexSE2*> Vertex3to2;
+//typedef std::vector<Vertex3to2> v3Mapv2;
 
 int main(int argc, char**argv){
 
@@ -41,7 +41,7 @@ int main(int argc, char**argv){
   string outfilename;
   g2o::CommandArgs arg;
   arg.paramLeftOver("graph-input", filename , "", "graph file which will be processed", true);
-  arg.param("o", outfilename, "graphSE2.g2o", "output file name");
+  arg.param("o", outfilename, "graphSE2_gps.g2o", "output file name");
   arg.parseArgs(argc, argv);
   ofstream ofG2O(outfilename.c_str());
 
@@ -66,13 +66,13 @@ int main(int argc, char**argv){
     }
   std::sort(vertexIds.begin(), vertexIds.end());
 
-    v3Mapv2 vertexVector;
+//    v3Mapv2 vertexVector;
 //    OptimizableGraph::Data* d = 0;
 //    LaserRobotData* data = 0;
 //// 	Sensor* sensor = 0;
-//// 	OptimizableGraph* graphSE2 = new OptimizableGraph();
-//    for (size_t i = 0; i<vertexIds.size(); i++)
-//    {
+    for (size_t i = 0; i<vertexIds.size(); i++)
+    {
+
 //    OptimizableGraph::Vertex* _v = graph->vertex(vertexIds[i]);
 //    VertexSE3* v3 = dynamic_cast<VertexSE3*>(_v);
 //    if (!v3)
@@ -120,7 +120,7 @@ int main(int argc, char**argv){
 
 //        }
 //        vertexVector.push_back(make_pair(v3, v2));
-//    }
+    }
 
 //// 	cout << "Map vertices:  " << vertexVector.size() << endl;
 //cout << "Graph vertices: " << graphSE2->vertices().size() << endl;
