@@ -73,10 +73,13 @@ int main(int argc, char**argv){
     for (size_t i = 0; i<vertexIds.size(); i++)
     {
 
-//    OptimizableGraph::Vertex* _v = graph->vertex(vertexIds[i]);
-//    VertexSE3* v3 = dynamic_cast<VertexSE3*>(_v);
-//    if (!v3)
-//      continue;
+    OptimizableGraph::Vertex* _v = graph->vertex(vertexIds[i]);
+    VertexSE3* v3 = dynamic_cast<VertexSE3*>(_v);
+    if (!v3)
+      continue;
+    VertexSE2* v2 = dynamic_cast<VertexSE2*>(_v);
+    if (!v2)
+      continue;
 
 //        VertexSE2* v2 = new VertexSE2();
 //        v2->setEstimate(iso3toSE_2d(v3->estimate()));
@@ -137,12 +140,16 @@ int main(int argc, char**argv){
 //    }
 //#endif
 
-//    //adding edges: to do meanwhile I save the vertices
-//        for (OptimizableGraph::EdgeSet::iterator it = graph->edges().begin(); it != graph->edges().end(); it++) {
+    //adding edges: to do meanwhile I save the vertices
+        for (OptimizableGraph::EdgeSet::iterator it = graph->edges().begin(); it != graph->edges().end(); it++) {
 
-//            EdgeSE3* e3 = dynamic_cast<EdgeSE3*>(*it);
-//            if (!e3)
-//                continue;
+            EdgeSE3* e3 = dynamic_cast<EdgeSE3*>(*it);
+            if (!e3)
+                continue;
+
+            EdgeSE2* e2 = dynamic_cast<EdgeSE2*>(*it);
+            if (!e2)
+                continue;
 
 //            EdgeSE2* e2 = new EdgeSE2();
 //            VertexSE3* tmp0 = dynamic_cast<VertexSE3*>(e3->vertices()[0]);
@@ -157,7 +164,7 @@ int main(int argc, char**argv){
 //            e2->setInformation(info);
 //            graphSE2->addEdge(e2);
 //// 			graphSE2->saveEdge(ofG2O, e2);
-//    }
+    }
 
     cout << "Graph edges: " << graph->edges().size() << endl;
     cout << "GraphSE2 edges: " << graphSE2->edges().size() << endl;
