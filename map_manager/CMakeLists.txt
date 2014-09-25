@@ -152,6 +152,12 @@ if (G2O_FOUND)
   include_directories(${G2O_INCLUDE_DIR})
 endif(G2O_FOUND)
 
+# Find g2o_frontend
+FIND_PACKAGE(G2O_FRONTEND REQUIRED)
+if (G2O_FRONTEND_FOUND)
+  include_directories(${G2O_FRONTEND_INCLUDE_DIR})
+endif(G2O_FRONTEND_FOUND)
+
 # Include the subdirectories
 ADD_SUBDIRECTORY(map_processing)
 ADD_SUBDIRECTORY(map_matching)

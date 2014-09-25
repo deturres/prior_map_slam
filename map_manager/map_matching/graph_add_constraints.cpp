@@ -24,7 +24,7 @@
 
 #include "g2o/types/slam3d/types_slam3d.h"
 #include "g2o/types/slam2d/types_slam2d.h"
-//#include "g2o_frontend/sensor_data/laser_robot_data.h"
+#include "g2o_frontend/sensor_data/laser_robot_data.h"
 //#include "g2o_frontend/sensor_data/rgbd_data.h"
 #include "bm_se2.h"
 
@@ -34,6 +34,9 @@ using namespace g2o;
 
 //typedef std::pair<g2o::VertexSE3*, g2o::VertexSE2*> Vertex3to2;
 //typedef std::vector<Vertex3to2> v3Mapv2;
+g2o::VertexSE2* fake = 0;
+EdgeSE2* fake2 = 0;
+LaserRobotData* data = 0;
 
 int main(int argc, char**argv){
 
