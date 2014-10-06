@@ -1,9 +1,11 @@
 # Find the header files
+set(G2O_FRONTEND_ROOT ~/university/g2o_frontend)
 
 FIND_PATH(G2O_FRONTEND_INCLUDE_DIR
   ${PROJECT_SOURCE_DIR}/../g2o_frontend
   ${PROJECT_SOURCE_DIR}/../../g2o_frontend
   ${G2O_FRONTEND_ROOT}/include
+  ${G2O_FRONTEND_ROOT} 
   $ENV{G2O_FRONTEND_ROOT}/include
   $ENV{G2O_FRONTEND_ROOT}
   /usr/local/include
@@ -14,7 +16,7 @@ FIND_PATH(G2O_FRONTEND_INCLUDE_DIR
   NO_DEFAULT_PATH
   )
 # Ugly but FIND_PATH is not working..???
-SET(G2O_FRONTEND_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/../../g2o_frontend)
+SET(G2O_FRONTEND_INCLUDE_DIR ${G2O_FRONTEND_ROOT})
 
 
 # Macro to unify finding both the debug and release versions of the

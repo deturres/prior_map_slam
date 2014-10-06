@@ -32,6 +32,7 @@
 using namespace std;
 using namespace g2o;
 
+
 //typedef std::pair<g2o::VertexSE3*, g2o::VertexSE2*> Vertex3to2;
 //typedef std::vector<Vertex3to2> v3Mapv2;
 g2o::VertexSE2* fake = 0;
