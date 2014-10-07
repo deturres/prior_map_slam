@@ -1,7 +1,7 @@
 # Find the header files
-set(G2O_FRONTEND_ROOT ~/university/g2o_frontend)
+# SET(G2O_FRONTEND_ROOT /home/deturres/source/g2o_frontend)
 
-FIND_PATH(G2O_FRONTEND_INCLUDE_DIR
+FIND_PATH(G2O_FRONTEND_INCLUDE_DIR g2o_frontend/sensor_data/sensor.h
   ${PROJECT_SOURCE_DIR}/../g2o_frontend
   ${PROJECT_SOURCE_DIR}/../../g2o_frontend
   ${G2O_FRONTEND_ROOT}/include
@@ -15,9 +15,8 @@ FIND_PATH(G2O_FRONTEND_INCLUDE_DIR
   /sw/include
   NO_DEFAULT_PATH
   )
-# Ugly but FIND_PATH is not working..???
-SET(G2O_FRONTEND_INCLUDE_DIR ${G2O_FRONTEND_ROOT})
 
+MESSAGE( "OH GOD " ${G2O_FRONTEND_INCLUDE_DIR} " "  $ENV{G2O_FRONTEND_ROOT} " " ${PROJECT_SOURCE_DIR}/../g2o_frontend)
 
 # Macro to unify finding both the debug and release versions of the
 # libraries; this is adapted from the OpenSceneGraph FIND_LIBRARY
@@ -28,6 +27,10 @@ MACRO(FIND_G2O_FRONTEND_LIBRARY MYLIBRARY MYLIBRARYNAME)
   FIND_LIBRARY("${MYLIBRARY}_DEBUG"
     NAMES "g2o_frontend_${MYLIBRARYNAME}_d"
     PATHS
+    ${PROJECT_SOURCE_DIR}/../../g2o_frontend/lib/Debug
+    ${PROJECT_SOURCE_DIR}/../../g2o_frontend/lib
+    ${PROJECT_SOURCE_DIR}/../../../../g2o_frontend/lib/Debug
+    ${PROJECT_SOURCE_DIR}/../../../../g2o_frontend/lib
     ${G2O_FRONTENED_ROOT}/lib/Debug
     ${G2O_FRONTENED_ROOT}/lib
     $ENV{G2O_FRONTENED_ROOT}/lib/Debug
@@ -52,6 +55,10 @@ MACRO(FIND_G2O_FRONTEND_LIBRARY MYLIBRARY MYLIBRARYNAME)
   FIND_LIBRARY(${MYLIBRARY}
     NAMES "g2o_frontend_${MYLIBRARYNAME}"
     PATHS
+    ${PROJECT_SOURCE_DIR}/../../g2o_frontend/lib/Release
+    ${PROJECT_SOURCE_DIR}/../../g2o_frontend/lib
+    ${PROJECT_SOURCE_DIR}/../../../../g2o_frontend/lib/Release
+    ${PROJECT_SOURCE_DIR}/../../../../g2o_frontend/lib
     ${G2O_FRONTEND_ROOT}/lib/Release
     ${G2O_FRONTEND_ROOT}/lib
     $ENV{G2O_FRONTENED_ROOT}/lib/Release
