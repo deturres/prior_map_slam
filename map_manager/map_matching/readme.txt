@@ -5,4 +5,4 @@
 - inters_point_manual.txt : features coming by the manual (pixel) selecting using a (i.e.).png image file coming from the image processing done with distance_map bin plus matlab routine to identify the skeleton intersection of the planimetry corridors
 
 /* adding new Poses to the graph as gaussian priors: Unary edge:
-- remembre to check that the graph used is a Se2 graph and that the name of the data associated to the node are the sensor_data type (no ROBOTLASER1, but LASER_ROBOT_DATA)
+- remember to check that the graph used is a Se2 graph and that the name of the data associated to the node are the sensor_data type (no ROBOTLASER1, but LASER_ROBOT_DATA) (for now ROBOTLASER1 IS OK)

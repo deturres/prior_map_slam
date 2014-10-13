@@ -24,7 +24,8 @@
 
 #include "g2o/types/slam3d/types_slam3d.h"
 #include "g2o/types/slam2d/types_slam2d.h"
-#include "g2o_frontend/sensor_data/laser_robot_data.h"
+#include "g2o/types/data/robot_laser.h"
+//#include "g2o_frontend/sensor_data/laser_robot_data.h"
 //#include "g2o_frontend/sensor_data/rgbd_data.h"
 #include "bm_se2.h"
 
@@ -37,7 +38,30 @@ using namespace g2o;
 //typedef std::vector<Vertex3to2> v3Mapv2;
 g2o::VertexSE2* fake = 0;
 EdgeSE2* fake2 = 0;
-LaserRobotData* data = 0;
+//LaserRobotData* data = 0;
+RobotLaser* data_raw = 0;
+
+//bool read_file_newPose(std::ifstream& is, Keypoints& k, Vector<Vector4f>& r)
+//{
+//    //todo aggiungi pair con seq (check the struct)
+
+//    std::string line;
+//    Point2f point;
+//    Vector4f rest;
+//    int seq;
+//    while(std::getline(is, line))
+//    {
+//        std::stringstream ss(line);
+//        ss >> seq;
+//        ss >> point.x >> point.y >> rest[0] >> rest[1] >> rest[2] >> rest[3];
+//        k.push_back(make_pair(seq,point));
+//        r.push_back(rest);
+
+//    }
+////    cout << k.size() << endl;
+//    is.close();
+//    return true;
+//}
 
 int main(int argc, char**argv){
 
