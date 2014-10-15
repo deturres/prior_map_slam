@@ -28,7 +28,7 @@
 //#include "g2o_frontend/sensor_data/laser_robot_data.h"
 //#include "g2o_frontend/sensor_data/rgbd_data.h"
 #include "bm_se2.h"
-
+#include "utility.h"
 
 using namespace std;
 using namespace g2o;
@@ -40,28 +40,6 @@ g2o::VertexSE2* fake = 0;
 EdgeSE2* fake2 = 0;
 //LaserRobotData* data = 0;
 RobotLaser* data_raw = 0;
-
-//bool read_file_newPose(std::ifstream& is, Keypoints& k, Vector<Vector4f>& r)
-//{
-//    //todo aggiungi pair con seq (check the struct)
-
-//    std::string line;
-//    Point2f point;
-//    Vector4f rest;
-//    int seq;
-//    while(std::getline(is, line))
-//    {
-//        std::stringstream ss(line);
-//        ss >> seq;
-//        ss >> point.x >> point.y >> rest[0] >> rest[1] >> rest[2] >> rest[3];
-//        k.push_back(make_pair(seq,point));
-//        r.push_back(rest);
-
-//    }
-////    cout << k.size() << endl;
-//    is.close();
-//    return true;
-//}
 
 int main(int argc, char**argv){
 
@@ -101,13 +79,16 @@ int main(int argc, char**argv){
     for (size_t i = 0; i<vertexIds.size(); i++)
     {
 
-    OptimizableGraph::Vertex* _v = graph->vertex(vertexIds[i]);
-    VertexSE3* v3 = dynamic_cast<VertexSE3*>(_v);
-    if (!v3)
-      continue;
-    VertexSE2* v2 = dynamic_cast<VertexSE2*>(_v);
-    if (!v2)
-      continue;
+        OptimizableGraph::Vertex* _v = graph->vertex(vertexIds[i]);
+        // ATTENTION: if the graph is a 3D graph, teh node type are different
+        //    VertexSE3* v3 = dynamic_cast<VertexSE3*>(_v);
+        //    if (!v3)
+        //      continue;
+
+        VertexSE2* v2 = dynamic_cast<VertexSE2*>(_v);
+        if (!v2)
+            continue;
+        int id = v2->id();
 
 //        VertexSE2* v2 = new VertexSE2();
 //        v2->setEstimate(iso3toSE_2d(v3->estimate()));
