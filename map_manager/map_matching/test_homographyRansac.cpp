@@ -2,10 +2,11 @@
  * @brief SURF detector + descriptor + FLANN Matcher + FindHomography
  */
 
-#include <stdio.h>
-#include <iostream>
-#include <fstream>
-#include <math.h>
+//#include <stdio.h>
+//#include <iostream>
+//#include <fstream>
+//#include <math.h>
+#include <Eigen/Core>
 #include <Eigen/Geometry>
 #include "opencv2/core/core.hpp"
 #include "opencv2/core/eigen.hpp"

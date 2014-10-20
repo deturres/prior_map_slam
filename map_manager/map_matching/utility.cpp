@@ -1,39 +1,27 @@
 #include "utility.h"
 
-
-
 namespace utility
 {
 
-//typedef std::pair< int,Eigen::Vector2d > NewPoseSeq;
-//typedef std::vector<NewPoseSeq, Eigen::aligned_allocator<Eigen::Vector2d> > NewPoses;
+    bool read_FakeGPS(std::ifstream& is, NewPosesGPS& gps)
+    {
+        std::string line;
+        Vector6d np;
+        int seq;
 
-//    bool read_fileFakeGPS(std::ifstream& is, NewPoses& k)
-//    {
-//        //todo aggiungi pair con seq (check the struct)
+        while(std::getline(is, line))
+        {
+            std::stringstream ss(line);
+            ss >> seq;
+            ss >> np[0] >> np[1] >> np[2] >> np[3] >> np[4] >> np[5];
+            gps.push_back(std::make_pair(seq,np));
+        }
+            std::cout << gps.size() << std::endl;
+        is.close();
+        return true;
+    }
 
-//        std::string line;
-//        Eigen::Vector2d np;
-//        NewPoseSeq fakeGPS;
-//        int seq;
-//        while(std::getline(is, line))
-//        {
-//            std::stringstream ss(line);
-//            ss >> seq;
-//            ss >> np.x >> np.y;
-//            //TODO!!!
-////            std::vector<Vector4f>& rest:
-
-////            ss >> rest[0] >> rest[1] >> rest[2] >> rest[3];
-////            k.push_back(make_pair(seq,point));
-////            r.push_back(rest);
-
-//        }
-//        //    cout << k.size() << endl;
-//        is.close();
-//        return true;
-//    }
-    Eigen::Vector3d t2v(const Eigen::Isometry2d& iso)
+    Eigen::Vector3d t2v_2d(const Eigen::Isometry2d& iso)
     {
         Eigen::Vector3d t;
         t.x() = iso.translation().x();
@@ -45,7 +33,7 @@ namespace utility
     }
 
 
-    Eigen::Isometry2d v2t(const Eigen::Vector3d& v)
+    Eigen::Isometry2d v2t_2d(const Eigen::Vector3d& v)
     {
         Eigen::Isometry2d iso;
         iso.translation() = v.head<2>();

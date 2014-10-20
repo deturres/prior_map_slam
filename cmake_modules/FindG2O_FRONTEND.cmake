@@ -16,7 +16,7 @@ FIND_PATH(G2O_FRONTEND_INCLUDE_DIR g2o_frontend/sensor_data/sensor.h
   NO_DEFAULT_PATH
   )
 
-MESSAGE( "OH GOD " ${G2O_FRONTEND_INCLUDE_DIR} " "  $ENV{G2O_FRONTEND_ROOT} " " ${PROJECT_SOURCE_DIR}/../g2o_frontend)
+# MESSAGE( "OH GOD " ${G2O_FRONTEND_INCLUDE_DIR} " "  $ENV{G2O_FRONTEND_ROOT} " " ${PROJECT_SOURCE_DIR}/../../../../../g2o_frontend)
 
 # Macro to unify finding both the debug and release versions of the
 # libraries; this is adapted from the OpenSceneGraph FIND_LIBRARY
@@ -29,8 +29,8 @@ MACRO(FIND_G2O_FRONTEND_LIBRARY MYLIBRARY MYLIBRARYNAME)
     PATHS
     ${PROJECT_SOURCE_DIR}/../../g2o_frontend/lib/Debug
     ${PROJECT_SOURCE_DIR}/../../g2o_frontend/lib
-    ${PROJECT_SOURCE_DIR}/../../../../g2o_frontend/lib/Debug
-    ${PROJECT_SOURCE_DIR}/../../../../g2o_frontend/lib
+    ${PROJECT_SOURCE_DIR}/../../../../../g2o_frontend/lib/Debug
+    ${PROJECT_SOURCE_DIR}/../../../../../g2o_frontend/lib
     ${G2O_FRONTENED_ROOT}/lib/Debug
     ${G2O_FRONTENED_ROOT}/lib
     $ENV{G2O_FRONTENED_ROOT}/lib/Debug
@@ -57,8 +57,8 @@ MACRO(FIND_G2O_FRONTEND_LIBRARY MYLIBRARY MYLIBRARYNAME)
     PATHS
     ${PROJECT_SOURCE_DIR}/../../g2o_frontend/lib/Release
     ${PROJECT_SOURCE_DIR}/../../g2o_frontend/lib
-    ${PROJECT_SOURCE_DIR}/../../../../g2o_frontend/lib/Release
-    ${PROJECT_SOURCE_DIR}/../../../../g2o_frontend/lib
+    ${PROJECT_SOURCE_DIR}/../../../../../g2o_frontend/lib/Release
+    ${PROJECT_SOURCE_DIR}/../../../../../g2o_frontend/lib
     ${G2O_FRONTEND_ROOT}/lib/Release
     ${G2O_FRONTEND_ROOT}/lib
     $ENV{G2O_FRONTENED_ROOT}/lib/Release

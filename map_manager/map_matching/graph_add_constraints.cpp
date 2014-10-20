@@ -4,8 +4,8 @@
  *  Created on: Sept 14, 2014
  *      Author: Martina
  */
-#include <fstream>
-#include <iomanip>
+
+#include "utility.h"
 
 #include "g2o/stuff/macros.h"
 #include "g2o/stuff/color_macros.h"
@@ -28,7 +28,6 @@
 //#include "g2o_frontend/sensor_data/laser_robot_data.h"
 //#include "g2o_frontend/sensor_data/rgbd_data.h"
 #include "bm_se2.h"
-#include "utility.h"
 
 using namespace std;
 using namespace g2o;
@@ -36,6 +35,10 @@ using namespace g2o;
 
 //typedef std::pair<g2o::VertexSE3*, g2o::VertexSE2*> Vertex3to2;
 //typedef std::vector<Vertex3to2> v3Mapv2;
+//typedef std::pair< int,Eigen::Vector2d > NewPoseSeq;
+//typedef std::vector<NewPoseSeq, Eigen::aligned_allocator<Eigen::Vector2d> > NewPoses;
+
+
 g2o::VertexSE2* fake = 0;
 EdgeSE2* fake2 = 0;
 //LaserRobotData* data = 0;
@@ -43,13 +46,20 @@ RobotLaser* data_raw = 0;
 
 int main(int argc, char**argv){
 
+    if( argc != 3 ) {
+        cout << " Usage: ./graph_add_constraints <graph> <new Poses filename> optional:<graph_enanched filename>" << endl;
+        return -1;
+    }
   string filename;
   string outfilename;
+  string newposes;
   g2o::CommandArgs arg;
-  arg.paramLeftOver("graph-input", filename , "", "graph file which will be processed", true);
-  arg.param("o", outfilename, "graphSE2_gps.g2o", "output file name");
+  arg.param("o", outfilename, "graph_gps.g2o", "output file name");
+  arg.paramLeftOver("gi", filename , "", "graph file which will be processed", true);
+  arg.paramLeftOver("f", newposes, "" , "file_gpsFakePose to be read", true);
   arg.parseArgs(argc, argv);
-  ofstream ofG2O(outfilename.c_str());
+  ofstream ofG2O_gps(outfilename.c_str());
+  ifstream fakeGPS(newposes.c_str());
 
 // graph construction
   typedef BlockSolver< BlockSolverTraits<-1, -1> >  SlamBlockSolver;
@@ -59,12 +69,10 @@ int main(int argc, char**argv){
   SlamBlockSolver* blockSolver = new SlamBlockSolver(linearSolver);
   OptimizationAlgorithmGaussNewton* solverGauss   = new OptimizationAlgorithmGaussNewton(blockSolver);
   SparseOptimizer * graph = new SparseOptimizer();
-  SparseOptimizer * graphSE2 = new SparseOptimizer();
   graph->setAlgorithm(solverGauss);
-  graphSE2->setAlgorithm(solverGauss);
   graph->load(filename.c_str());
 
-    // sort the vertices based on the id
+  // sort the vertices based on the id
   std::vector<int> vertexIds(graph->vertices().size());
   int k=0;
   for (OptimizableGraph::VertexIDMap::iterator it=graph->vertices().begin(); it!= graph->vertices().end(); it ++){
@@ -72,114 +80,57 @@ int main(int argc, char**argv){
     }
   std::sort(vertexIds.begin(), vertexIds.end());
 
-//    v3Mapv2 vertexVector;
 //    OptimizableGraph::Data* d = 0;
-//    LaserRobotData* data = 0;
-//// 	Sensor* sensor = 0;
-    for (size_t i = 0; i<vertexIds.size(); i++)
-    {
 
-        OptimizableGraph::Vertex* _v = graph->vertex(vertexIds[i]);
-        // ATTENTION: if the graph is a 3D graph, teh node type are different
-        //    VertexSE3* v3 = dynamic_cast<VertexSE3*>(_v);
-        //    if (!v3)
-        //      continue;
+  //read  from file the new GPS fake prior
+  utility::NewPosesGPS gps;
+  utility::read_FakeGPS(fakeGPS, gps);
 
-        VertexSE2* v2 = dynamic_cast<VertexSE2*>(_v);
-        if (!v2)
-            continue;
-        int id = v2->id();
+  cout << "Graph edges before: " << graph->edges().size() << endl;
+  cout << "dimension file " <<  gps.size() << endl;
 
-//        VertexSE2* v2 = new VertexSE2();
-//        v2->setEstimate(iso3toSE_2d(v3->estimate()));
-//        v2->setId(v3->id());
-//        d = v3->userData();
+  //adding edges_prior
+  for (int i = 0; i < (int)gps.size(); i++) {
 
-//        while(d) {
-//            data = dynamic_cast<LaserRobotData*>(d);
-//            d=d->next();
-//            if(data)
-//            {
-//// 				cout << "i: " << i << endl;
-//                v2->addUserData(data);
+      int idv = gps[i].first;
+      // ATTENTION: if the graph is a 2D graph, the node type are different
+      // to be changed in 3D on the go!!!
+      VertexSE3* v;
 
-//                //adding sensor parameter
-//                Parameter* p = graph->parameters().getParameter(data->paramIndex());
-//                if (! graphSE2->parameters().getParameter(data->paramIndex()))
-//                {// TODO changing in SE2
-//                    ParameterSE3Offset* parameter = dynamic_cast<ParameterSE3Offset*> (p);
-//                    parameter->setId(1);
-//                    graphSE2->parameters().addParameter(p);
-//                    graphSE2->saveParameter(ofG2O, p);
-//                }
-//                //adding sensor parameter, using SensorData, not working
-//// 				sensor = data->getSensor();
-//// 				assert (!sensor && "!");
-//// 				cout << "pippo3" << endl;
-//// 				Parameter* parameter = sensor->getParameter();
-//// 				assert (!parameter && "!");
-////
-//// 				if (! graphSE2->parameters().getParameter(parameter->id())){
-//// 					cout << "pippo4" << endl;
-//// 					graphSE2->parameters().addParameter(parameter);
-//// 					cout << "pippo5" << endl;
-//// 					graphSE2->saveParameter(ofG2O, parameter);
-//// 				}
+      //searching for the correct associated vertex
+      for (size_t i = 0; i<vertexIds.size(); i++)
+      {
+          OptimizableGraph::Vertex* _v = graph->vertex(vertexIds[i]);
 
-//                graphSE2->addVertex(v2);
-//// 				graphSE2->saveVertex(ofG2O, v2);
-//            }
+          v = dynamic_cast<VertexSE3*>(_v);
+          if (!v)
+              continue;
+          if(idv != v->id())
+              continue;
 
-//        }
-//        vertexVector.push_back(make_pair(v3, v2));
-    }
+          //adding the edge prior correspondent to the vertex
+          Vector6d np = gps[i].second;
+          const Eigen::Isometry3d meas = utility::v2t(np);
+          EdgeSE3Prior* esp = new EdgeSE3Prior();
+          esp->setVertex(0,v);
+          esp->setMeasurement(meas);
+          Eigen::Matrix<double, 6 , 6> info;
+          info.setIdentity();
+          info.block<3,3>(0,0)*0; //fake gps 3d just traslation??
+          info.block<3,3>(3,3)*1000; //fake gps 3d just traslation??
+//          Eigen::Matrix3d info;
+//          info.block<2,2>(1,1)*1000;
+          esp->setInformation(info);
+          graph->addEdge(esp);
+          cout << "dimension file " << endl;
+          cout << "Graph edges: " << graph->edges().size() << endl;
+      }
+  }
 
-//// 	cout << "Map vertices:  " << vertexVector.size() << endl;
-//cout << "Graph vertices: " << graphSE2->vertices().size() << endl;
-//cout << "GraphSE2 vertices: " << graphSE2->vertices().size() << endl;
+  cout << "Graph edges: " << graph->edges().size() << endl;
 
-//#if 0
-//    for (int j = 0; j < vertexVector.size(); j++) {
-//        VertexSE2* tmp =  vertexVector[j].second;
-//        LaserRobotData* ltmp = dynamic_cast<LaserRobotData*>(tmp->userData());
-//        if (ltmp)
-//        {
-//            cout << "Vertex: " << tmp->id() << " Datal: " << ltmp->paramIndex() << endl;
-//        }
-//    }
-//#endif
-
-    //adding edges: to do meanwhile I save the vertices
-        for (OptimizableGraph::EdgeSet::iterator it = graph->edges().begin(); it != graph->edges().end(); it++) {
-
-            EdgeSE3* e3 = dynamic_cast<EdgeSE3*>(*it);
-            if (!e3)
-                continue;
-
-            EdgeSE2* e2 = dynamic_cast<EdgeSE2*>(*it);
-            if (!e2)
-                continue;
-
-//            EdgeSE2* e2 = new EdgeSE2();
-//            VertexSE3* tmp0 = dynamic_cast<VertexSE3*>(e3->vertices()[0]);
-//            VertexSE3* tmp1 = dynamic_cast<VertexSE3*>(e3->vertices()[1]);
-//            Vertex3to2 vertex0 = vertexVector[tmp0->id()];
-//            Vertex3to2 vertex1 = vertexVector[tmp1->id()];
-//            e2->setVertex(0, vertex0.second);
-//            e2->setVertex(1, vertex1.second);
-//            e2->setMeasurementFromState();
-//            Eigen::Matrix<double, 3,3> info;
-//            info.setIdentity()*1000;
-//            e2->setInformation(info);
-//            graphSE2->addEdge(e2);
-//// 			graphSE2->saveEdge(ofG2O, e2);
-    }
-
-    cout << "Graph edges: " << graph->edges().size() << endl;
-    cout << "GraphSE2 edges: " << graphSE2->edges().size() << endl;
-
-    cout << "...saving graph in " << outfilename.c_str() << endl;
-    graphSE2->save(ofG2O);
-    ofG2O.close();
-    return (0);
+  cout << "...saving graph in " << outfilename.c_str() << endl;
+  graph->save(ofG2O_gps);
+  ofG2O_gps.close();
+  return (0);
 }
