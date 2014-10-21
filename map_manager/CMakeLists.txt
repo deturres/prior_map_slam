@@ -161,3 +161,4 @@ endif(G2O_FRONTEND_FOUND)
 # Include the subdirectories
 ADD_SUBDIRECTORY(map_processing)
 ADD_SUBDIRECTORY(map_matching)
+ADD_SUBDIRECTORY(graph2d_processing)

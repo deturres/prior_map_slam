@@ -5,8 +5,6 @@
  *      Author: Martina
  */
 
-#include "utility.h"
-
 #include "g2o/stuff/macros.h"
 #include "g2o/stuff/color_macros.h"
 #include "g2o/stuff/command_args.h"
@@ -28,18 +26,16 @@
 //#include "g2o_frontend/sensor_data/laser_robot_data.h"
 //#include "g2o_frontend/sensor_data/rgbd_data.h"
 #include "bm_se2.h"
-#include "bm_se3.h"
-
 
 using namespace std;
 using namespace g2o;
 
 
-//typedef std::pair<g2o::VertexSE3*, g2o::VertexSE2*> Vertex3to2;
-//typedef std::vector<Vertex3to2> v3Mapv2;
-//typedef std::pair< int,Eigen::Vector2d > NewPoseSeq;
-//typedef std::vector<NewPoseSeq, Eigen::aligned_allocator<Eigen::Vector2d> > NewPoses;
-
+typedef std::pair< int,Isometry3d > PoseSeq;
+typedef std::vector<PoseSeq, Eigen::aligned_allocator<Isometry3d> > PoseVector;
+//debug
+ofstream os("odometry2d.dat");
+ofstream osangle("angles2d.dat");
 
 g2o::VertexSE2* fake = 0;
 EdgeSE2* fake2 = 0;
@@ -49,7 +45,7 @@ RobotLaser* data_raw = 0;
 int main(int argc, char**argv){
 
     if( argc != 3 ) {
-        cout << " Usage: ./graph_add_constraints <graph> <new Poses filename> optional:<graph_enanched filename>" << endl;
+        cout << " Usage: ./graph2d_getthings <graph> <new Poses filename> optional:<graph_enanched filename>" << endl;
         return -1;
     }
   string filename;
@@ -82,64 +78,57 @@ int main(int argc, char**argv){
     }
   std::sort(vertexIds.begin(), vertexIds.end());
 
-//    OptimizableGraph::Data* d = 0;
-
-  //read  from file the new GPS fake prior
-  utility::NewPosesGPS gps;
-  utility::read_FakeGPS(fakeGPS, gps);
-
-  cout << "Graph edges before: " << graph->edges().size() << endl;
-  cout << "dimension file " <<  gps.size() << endl;
-
   graph->vertex(0)->setFixed(true);
   graph->initializeOptimization();
   graph->setVerbose(false);
 
-  //adding edges_prior
-  for (int i = 0; i < (int)gps.size(); i++) {
+  Isometry2d odom0to1 = Isometry2d::Identity();
+  VertexSE2* v_current = 0;
+  EdgeSE2* eSE2 = 0;
+  OptimizableGraph::EdgeSet es;
 
-      int idv = gps[i].first;
-      Vector6d np = gps[i].second;
+  PoseVector odom;
 
-      // ATTENTION: if the graph is a 2D graph, the node type are different
-      // to be changed in 3D on the go!!!
-      VertexSE3* v;
+  for (size_t j = 0; j<vertexIds.size(); j++)
+  {
+      OptimizableGraph::Vertex* _v = graph->vertex(vertexIds[j]);
 
-      //searching for the correct associated vertex
-      for (size_t j = 0; j<vertexIds.size(); j++)
-      {
-          OptimizableGraph::Vertex* _v = graph->vertex(vertexIds[j]);
+      VertexSE2* v = dynamic_cast<VertexSE2*>(_v);
+      if (!v)
+          continue;
+      v_current = v;
+      es = v_current->edges();
 
-          v = dynamic_cast<VertexSE3*>(_v);
-          if (!v)
+      for (OptimizableGraph::EdgeSet::iterator itv = es.begin(); itv != es.end(); itv++) {
+          eSE2 = dynamic_cast<EdgeSE2*>(*itv);
+
+          if (!eSE2)
               continue;
-          if(idv != v->id())
-              continue;
-
-          //adding the edge prior correspondent to the vertex
-          cerr << "meas vector: \n" << np << endl;
-          const Eigen::Isometry3d meas = utility::v2t(np);
-          cerr << "meas iso: \n" << meas.matrix() << endl;
-          EdgeSE3Prior* esp = new EdgeSE3Prior();
-          esp->setVertex(0,v);
-          esp->setMeasurement(meas);
-          Eigen::Matrix<double, 6 , 6> info;
-          info.setIdentity();
-          info.block<3,3>(0,0)*0; //fake gps 3d just traslation??
-          info.block<3,3>(3,3)*1000; //fake gps 3d just traslation??
-//          Eigen::Matrix3d info;
-//          info.block<2,2>(1,1)*1000;
-          ParameterSE3Offset* offset_parameter = new ParameterSE3Offset();
-          offset_parameter->setId(1);
-          offset_parameter->setOffset(Eigen::Isometry3d::Identity()); //transform between world and robot
-          graph->parameters().addParameter(offset_parameter);
-          esp->setParameterId(0, offset_parameter->id());
-          esp->setInformation(info);
-          graph->addEdge(esp);
+          VertexSE2* tmp0 = dynamic_cast<VertexSE2*>(eSE2->vertices()[0]);
+          VertexSE2* tmp1 = dynamic_cast<VertexSE2*>(eSE2->vertices()[1]);
+          cout << "- Odom edge from vertex  " << tmp0->id() << " to " << tmp1->id() << endl;
+          if(tmp0->id() == v_current->id())
+          {
+              odom0to1 = eSE2->measurement().toIsometry();
+              cout << "Odometry transformation between the current vertex " << v_current->id() << " and the next one " << tmp1->id() << ":\n" << odom0to1.matrix() << endl;
+          } else {
+              odom0to1 = Eigen::Isometry2d::Identity();
+              cout << "###Skipping this edge (forward evaluation of the odometry)###" << endl;
+          }
+          Vector3d currentTransform = t2v_2d(odom0to1);
+          PoseSeq current;
+          current.first = v_current->id();
+          current.second = odom0to1;
+          odom.push_back(current);
+          cerr << "CurrentRobotReferenceFrame >> " <<  currentTransform.transpose() << endl;
+          cerr << "number of poses >> " <<  odom.size() << endl;
+    #if 1
+          os << v_current->id() << " " << currentTransform.transpose() << endl;
+          os.flush();
+    #endif
       }
   }
 
-  cout << "Graph edges: " << graph->edges().size() << endl;
 
   cout << "...saving graph in " << outfilename.c_str() << endl;
   graph->save(ofG2O_gps);

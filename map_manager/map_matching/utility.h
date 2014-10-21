@@ -49,10 +49,10 @@ namespace utility
 
     //reading fake gps pose from file
     bool read_FakeGPS(std::ifstream& is, NewPosesGPS& gps);
-    //Isometry matrix to vector
-    Eigen::Vector3d t2v_2d(const Eigen::Isometry2d& iso);
-    //Vector to isometry matrix
-    Eigen::Isometry2d v2t_2d(const Eigen::Vector3d& v);
+//    //Isometry matrix to vector
+//    Eigen::Vector3d t2v_2d(const Eigen::Isometry2d& iso);
+//    //Vector to isometry matrix
+//    Eigen::Isometry2d v2t_2d(const Eigen::Vector3d& v);
 }
 
 #endif //UTILITY_H
