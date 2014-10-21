@@ -89,18 +89,24 @@ int main(int argc, char**argv){
   cout << "Graph edges before: " << graph->edges().size() << endl;
   cout << "dimension file " <<  gps.size() << endl;
 
+  graph->vertex(0)->setFixed(true);
+  graph->initializeOptimization();
+  graph->setVerbose(false);
+
   //adding edges_prior
   for (int i = 0; i < (int)gps.size(); i++) {
 
       int idv = gps[i].first;
+      Vector6d np = gps[i].second;
+
       // ATTENTION: if the graph is a 2D graph, the node type are different
       // to be changed in 3D on the go!!!
       VertexSE3* v;
 
       //searching for the correct associated vertex
-      for (size_t i = 0; i<vertexIds.size(); i++)
+      for (size_t j = 0; j<vertexIds.size(); j++)
       {
-          OptimizableGraph::Vertex* _v = graph->vertex(vertexIds[i]);
+          OptimizableGraph::Vertex* _v = graph->vertex(vertexIds[j]);
 
           v = dynamic_cast<VertexSE3*>(_v);
           if (!v)
@@ -109,8 +115,9 @@ int main(int argc, char**argv){
               continue;
 
           //adding the edge prior correspondent to the vertex
-          Vector6d np = gps[i].second;
+          cerr << "meas vector: \n" << np << endl;
           const Eigen::Isometry3d meas = utility::v2t(np);
+          cerr << "meas iso: \n" << meas.matrix() << endl;
           EdgeSE3Prior* esp = new EdgeSE3Prior();
           esp->setVertex(0,v);
           esp->setMeasurement(meas);
@@ -120,10 +127,13 @@ int main(int argc, char**argv){
           info.block<3,3>(3,3)*1000; //fake gps 3d just traslation??
 //          Eigen::Matrix3d info;
 //          info.block<2,2>(1,1)*1000;
+          ParameterSE3Offset* offset_parameter = new ParameterSE3Offset();
+          offset_parameter->setId(1);
+          offset_parameter->setOffset(Eigen::Isometry3d::Identity()); //transform between world and robot
+          graph->parameters().addParameter(offset_parameter);
+          esp->setParameterId(0, offset_parameter->id());
           esp->setInformation(info);
           graph->addEdge(esp);
-          cout << "dimension file " << endl;
-          cout << "Graph edges: " << graph->edges().size() << endl;
       }
   }
 
