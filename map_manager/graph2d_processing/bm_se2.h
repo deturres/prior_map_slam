@@ -137,4 +137,13 @@ inline g2o::SE2 iso3toSE_2d(const Eigen::Isometry3d& iso){
   return g2o::SE2(iso.translation().x(), iso.translation().y(), angle);
 }
 
+inline Eigen::Isometry2d se2t(const g2o::SE2& estimate) {
+
+    Eigen::Isometry2d vEstimate;
+    Eigen::Vector3d ev = estimate.toVector();
+    vEstimate.linear() = Eigen::Rotation2Dd(ev.z()).matrix();
+    vEstimate.translation() = ev.head<2>();
+}
+
+
 #endif
