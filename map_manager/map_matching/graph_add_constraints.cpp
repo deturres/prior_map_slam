@@ -35,12 +35,6 @@ using namespace std;
 using namespace g2o;
 
 
-//typedef std::pair<g2o::VertexSE3*, g2o::VertexSE2*> Vertex3to2;
-//typedef std::vector<Vertex3to2> v3Mapv2;
-//typedef std::pair< int,Eigen::Vector2d > NewPoseSeq;
-//typedef std::vector<NewPoseSeq, Eigen::aligned_allocator<Eigen::Vector2d> > NewPoses;
-
-
 g2o::VertexSE2* fake = 0;
 EdgeSE2* fake2 = 0;
 //LaserRobotData* data = 0;
@@ -48,7 +42,7 @@ RobotLaser* data_raw = 0;
 
 int main(int argc, char**argv){
 
-    if( argc != 3 ) {
+    if( argc < 3 ) {
         cout << " Usage: ./graph_add_constraints <graph> <new Poses filename> optional:<graph_enanched filename>" << endl;
         return -1;
     }
@@ -56,7 +50,7 @@ int main(int argc, char**argv){
   string outfilename;
   string newposes;
   g2o::CommandArgs arg;
-  arg.param("o", outfilename, "graph_gps.g2o", "output file name");
+  arg.param("o", outfilename, "graph_gps_n.g2o", "output file name");
   arg.paramLeftOver("gi", filename , "", "graph file which will be processed", true);
   arg.paramLeftOver("f", newposes, "" , "file_gpsFakePose to be read", true);
   arg.parseArgs(argc, argv);
